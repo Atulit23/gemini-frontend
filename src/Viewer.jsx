@@ -7,7 +7,7 @@ export default function Viewer() {
     const [currIndex, setCurrIndex] = useState(0)
 
     async function getAllUserChats() {
-        await axios.get(`http://localhost:8000/get-chats?userId=${localStorage.getItem("loginId")}`).then(res => {
+        await axios.get(`https://gemini-backend-beta.vercel.app/get-chats?userId=${localStorage.getItem("loginId")}`).then(res => {
             console.log(res.data)
             setData(res.data.reverse())
         }).catch(err => {

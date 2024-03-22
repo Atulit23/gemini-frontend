@@ -9,7 +9,7 @@ export default function SignUpPage() {
     const navigate = useNavigate()
 
     const signUp = async () => {
-        await axios.post("http://localhost:8000/signup", {
+        await axios.post("https://gemini-backend-beta.vercel.app/signup", {
             email: email,
             password: password
         }).then(res => {

@@ -17,7 +17,7 @@ export default function ChatBotMain() {
     };
 
     async function getSingleChat() {
-        await axios.get(`http://localhost:8000/get-single-chat?chatId=${localStorage.getItem("chatId")}`).then(res => {
+        await axios.get(`https://gemini-backend-beta.vercel.app/get-single-chat?chatId=${localStorage.getItem("chatId")}`).then(res => {
             console.log(res.data)
             if (res.data[0]?.chats) {
                 setAllChats(res.data[0]?.chats)
@@ -52,7 +52,7 @@ export default function ChatBotMain() {
             arr.push({ question: item?.question, answer: item?.answer })
         })
         console.log(arr)
-        await axios.post('http://localhost:8000/add-chat', {
+        await axios.post('https://gemini-backend-beta.vercel.app/add-chat', {
             userId: localStorage.getItem("loginId"),
             chatId: localStorage.getItem("chatId"),
             chats: arr
@@ -64,7 +64,7 @@ export default function ChatBotMain() {
     }
 
     async function handleQuery(arr, inputs, arrToSend) {
-        await axios.post(`http://localhost:8000/generate`, {
+        await axios.post(`https://gemini-backend-beta.vercel.app/generate`, {
             prompt: inputs,
             history: arrToSend
         })
