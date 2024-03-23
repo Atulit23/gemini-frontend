@@ -78,22 +78,27 @@ export default function ChatBotMain() {
                 arr1[arr1?.length - 1].answer = arr1[arr1?.length - 1].answer + data?.replaceAll("\n\n", "\n")?.replaceAll("**", "")?.replaceAll("*", "• ")
                 setAllChats(arr1)
                 addChat(arr1)
-                if (document.getElementById("srcollables")) {
-                    var scrollables = document.getElementById("srcollables");
-                    document.getElementById("srcollables").scrollTo({
-                        top: scrollables.scrollHeight,
-                        behavior: 'smooth'
-                    });
-                }
+
             } else {
                 arr1[arr1?.length - 1].answer = ""
             }
         });
 
+        if (document.getElementById("srcollables")) {
+            var scrollables = document.getElementById("srcollables");
+            document.getElementById("srcollables").scrollTo({
+                top: scrollables.scrollHeight,
+                behavior: 'smooth'
+            });
+        }
+
         return () => {
             socket.disconnect();
         };
+
+
     }, [allChats]);
+
 
     async function handleQuery(arr, inputs, arrToSend) {
         // await axios.post(`https://gemini-backend-beta.vercel.app/generate`, {
