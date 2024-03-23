@@ -3,6 +3,7 @@ import send from './send.svg'
 import Typewriter from './Typewriter'
 import axios from 'axios'
 import { uuid } from 'uuidv4';
+import { io } from 'socket.io-client';
 
 export default function ChatBotMain() {
     const [allChats, setAllChats] = useState([])
@@ -61,75 +62,64 @@ export default function ChatBotMain() {
         })
     }
 
+    useEffect(() => {
+        const socket = io('https://gemini-chat-socket.onrender.com');
+        socket.on('connect', () => console.log(socket.id));
+        socket.on('connect_error', () => {
+            setTimeout(() => socket.connect(), 5000);
+        });
+        // socket.on('time', (data) => setTime(data));
+        socket.on('disconnect', () => console.log('server disconnected'));
+        socket.on('response', (data) => {
+            console.log(data)
+            let arr1 = [...allChats]
+            console.log(arr1)
+            console.log(arr1[arr1?.length - 1])
+            if (arr1[arr1?.length - 1]) {
+                arr1[arr1?.length - 1].answer = arr1[arr1?.length - 1].answer + data?.replaceAll("\n\n", "\n")?.replaceAll("**", "")?.replaceAll("*", "• ")
+                setAllChats(arr1)
+                addChat(arr1)
+            } else {
+                arr1[arr1?.length - 1].answer = ""
+            }
+        });
+
+        return () => {
+            socket.disconnect();
+        };
+    }, [allChats]);
+
     async function handleQuery(arr, inputs, arrToSend) {
-        await axios.post(`https://gemini-backend-beta.vercel.app/generate`, {
-            prompt: inputs,
-            history: arrToSend
-        })
-            // await axios
-            //     .post(
-            //         "https://api-inference.huggingface.co/models/HuggingFaceH4/zephyr-7b-beta",
-            //         {
-            //             inputs: inputs,
-            //         },
-            //         { headers: headers }
-            //     )
-            .then((response_) => {
-                let arr1 = [...arr]
-                console.log(arr1)
-                console.log(arr1[arr1?.length - 1])
-                if (arr1[arr1?.length - 1]) {
-                    arr1[arr1?.length - 1].answer = ""
-                    arr1[arr1?.length - 1].answer = response_.data.gen_response?.replaceAll("\n\n", "\n")?.replaceAll("**", "")?.replaceAll("*", "• ")
-                    setAllChats(arr1)
-                    addChat(arr1)
-                }
-                console.log(arr1)
-                console.log(response_?.data[0]?.generated_text)
-            })
-            .catch((error) => {
-                console.error("Error:", error);
-            });
-        // await axios.post(`http://localhost:8000/generate`, {
+        // await axios.post(`https://gemini-backend-beta.vercel.app/generate`, {
         //     prompt: inputs,
         //     history: arrToSend
         // })
-        //     .then(response => {
-        //         console.log(response)
-        //         const stream = response.data;
-
-        //         console.log(stream)
-        //         const reader = stream.getReader();
-        //         const readChunk = () => {
-        //             reader.read()
-        //                 .then(({
-        //                     value,
-        //                     done
-        //                 }) => {
-        //                     if (done) {
-        //                         console.log('Stream finished');
-        //                         return;
-        //                     }
-        //                     const chunkString = new TextDecoder().decode(value);
-        //                     console.log(chunkString);
-        //                     readChunk();
-        //                 })
-        //                 .catch(error => {
-        //                     console.error(error);
-        //                 });
-        //         };
-        //         readChunk();
+        //     // await axios
+        //     //     .post(
+        //     //         "https://api-inference.huggingface.co/models/HuggingFaceH4/zephyr-7b-beta",
+        //     //         {
+        //     //             inputs: inputs,
+        //     //         },
+        //     //         { headers: headers }
+        //     //     )
+        //     .then((response_) => {
+        //         let arr1 = [...arr]
+        //         console.log(arr1)
+        //         console.log(arr1[arr1?.length - 1])
+        //         if (arr1[arr1?.length - 1]) {
+        //             arr1[arr1?.length - 1].answer = ""
+        //             arr1[arr1?.length - 1].answer = response_.data.gen_response?.replaceAll("\n\n", "\n")?.replaceAll("**", "")?.replaceAll("*", "• ")
+        //             setAllChats(arr1)
+        //             addChat(arr1)
+        //         }
+        //         console.log(arr1)
+        //         console.log(response_?.data[0]?.generated_text)
         //     })
-        //     .catch(error => {
-        //         console.error(error);
+        //     .catch((error) => {
+        //         console.error("Error:", error);
         //     });
-        // const events = new EventSource('http://localhost:8000/generate');
+        io('https://gemini-chat-socket.onrender.com').emit('message', { text: inputs, array: arrToSend });
 
-        // events.onmessage = (event) => {
-        //   const parsedData = JSON.parse(event.data);
-        //     console.log(parsedData)
-        // //   setFacts((facts) => facts.concat(parsedData));
-        // };
     }
 
     console.log(allChats)
@@ -160,6 +150,19 @@ export default function ChatBotMain() {
                                                 </span>
                                             )) : ''
                                         }
+                                        {/* {
+                                            item?.answer && item?.answer.split("\n").map((part, index) => (
+                                                <span key={index}>
+                                                    {part}
+                                                    {index < item?.answer.split("\n")?.length - 1 && (
+                                                        <>
+                                                            <br />
+                                                            <br />
+                                                        </>
+                                                    )}
+                                                </span>
+                                            ))
+                                        } */}
                                     </div>
                                 </div>
                             </div>

@@ -15,7 +15,6 @@ export default function Typewriter({ text, delay }) {
     }, [currentIndex, delay, text]);
 
     let textParts = currentText.split('\n');
-    console.log(textParts)
 
     return (
         <span>

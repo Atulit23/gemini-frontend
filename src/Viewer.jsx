@@ -9,7 +9,6 @@ export default function Viewer() {
 
     async function getAllUserChats() {
         await axios.get(`https://gemini-backend-beta.vercel.app/get-chats?userId=${localStorage.getItem("loginId")}`).then(res => {
-            console.log(res.data)
             setData(res.data.reverse())
         }).catch(err => {
             console.log(err)
