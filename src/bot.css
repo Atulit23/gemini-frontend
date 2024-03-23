@@ -104,6 +104,7 @@
   display: flex;
   flex-direction: column;
   overflow-y: scroll;
+  scroll-behavior: smooth;
 }
 
 .all__main__chats::-webkit-scrollbar {

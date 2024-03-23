@@ -65,20 +65,26 @@ export default function ChatBotMain() {
     useEffect(() => {
         const socket = io('https://gemini-chat-socket.onrender.com');
         socket.on('connect', () => console.log(socket.id));
+
         socket.on('connect_error', () => {
             setTimeout(() => socket.connect(), 5000);
         });
-        // socket.on('time', (data) => setTime(data));
+
         socket.on('disconnect', () => console.log('server disconnected'));
         socket.on('response', (data) => {
             console.log(data)
             let arr1 = [...allChats]
-            console.log(arr1)
-            console.log(arr1[arr1?.length - 1])
             if (arr1[arr1?.length - 1]) {
                 arr1[arr1?.length - 1].answer = arr1[arr1?.length - 1].answer + data?.replaceAll("\n\n", "\n")?.replaceAll("**", "")?.replaceAll("*", "• ")
                 setAllChats(arr1)
                 addChat(arr1)
+                if (document.getElementById("srcollables")) {
+                    var scrollables = document.getElementById("srcollables");
+                    document.getElementById("srcollables").scrollTo({
+                        top: scrollables.scrollHeight,
+                        behavior: 'smooth'
+                    });
+                }
             } else {
                 arr1[arr1?.length - 1].answer = ""
             }
@@ -118,15 +124,16 @@ export default function ChatBotMain() {
         //     .catch((error) => {
         //         console.error("Error:", error);
         //     });
-        io('https://gemini-chat-socket.onrender.com').emit('message', { text: inputs, array: arrToSend });
-
+        const room = Math.random().toString()
+        io('https://gemini-chat-socket.onrender.com').emit('joinRoom', room);
+        io('https://gemini-chat-socket.onrender.com').emit('message', { text: inputs, array: arrToSend, room: room });
     }
 
     console.log(allChats)
 
     return (
         <div className='where__we__chat'>
-            <div className="all__main__chats">
+            <div className="all__main__chats" id="srcollables">
                 {
                     allChats?.map((item, index) => {
                         return (
