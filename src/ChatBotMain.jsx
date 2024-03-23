@@ -1,7 +1,5 @@
 import React, { useEffect, useState } from 'react'
 import send from './send.svg'
-import ApexChart from './ApexChart'
-import Column from './Columns'
 import Typewriter from './Typewriter'
 import axios from 'axios'
 import { uuid } from 'uuidv4';
@@ -92,6 +90,46 @@ export default function ChatBotMain() {
             .catch((error) => {
                 console.error("Error:", error);
             });
+        // await axios.post(`http://localhost:8000/generate`, {
+        //     prompt: inputs,
+        //     history: arrToSend
+        // })
+        //     .then(response => {
+        //         console.log(response)
+        //         const stream = response.data;
+
+        //         console.log(stream)
+        //         const reader = stream.getReader();
+        //         const readChunk = () => {
+        //             reader.read()
+        //                 .then(({
+        //                     value,
+        //                     done
+        //                 }) => {
+        //                     if (done) {
+        //                         console.log('Stream finished');
+        //                         return;
+        //                     }
+        //                     const chunkString = new TextDecoder().decode(value);
+        //                     console.log(chunkString);
+        //                     readChunk();
+        //                 })
+        //                 .catch(error => {
+        //                     console.error(error);
+        //                 });
+        //         };
+        //         readChunk();
+        //     })
+        //     .catch(error => {
+        //         console.error(error);
+        //     });
+        // const events = new EventSource('http://localhost:8000/generate');
+
+        // events.onmessage = (event) => {
+        //   const parsedData = JSON.parse(event.data);
+        //     console.log(parsedData)
+        // //   setFacts((facts) => facts.concat(parsedData));
+        // };
     }
 
     console.log(allChats)

@@ -1,9 +1,7 @@
 import React, { useState, useEffect } from 'react';
 
 export default function Typewriter({ text, delay }) {
-
     const [currentText, setCurrentText] = useState('');
-
     const [currentIndex, setCurrentIndex] = useState(0);
 
     useEffect(() => {
@@ -13,20 +11,17 @@ export default function Typewriter({ text, delay }) {
                 setCurrentIndex((prevIndex) => prevIndex + 1);
             }, delay);
             return () => clearTimeout(timeout);
-
         }
-
     }, [currentIndex, delay, text]);
 
-    const textParts = currentText.split('\n');
+    let textParts = currentText.split('\n');
+    console.log(textParts)
 
     return (
-
         <span>
-
             {textParts.map((part, index) => (
                 <span key={index}>
-                    {part}
+                    {index === 0 && text[0]}{index == 0 ? part.substring(1, part.length) : part}
                     {index < textParts.length - 1 && (
                         <>
                             <br />
@@ -37,5 +32,4 @@ export default function Typewriter({ text, delay }) {
             ))}
         </span>
     );
-
 }

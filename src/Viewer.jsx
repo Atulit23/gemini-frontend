@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react'
 import './bot.css'
 import axios from 'axios'
+import dp from '../src/assets/images/unnamed.jpg'
 
 export default function Viewer() {
     const [data, setData] = useState([])
@@ -41,12 +42,11 @@ export default function Viewer() {
                                 localStorage.setItem("currIndex", index.toString())
                                 window.location.reload()
                             }}>
-                                <span>{item?.chats[0]?.question?.substring(0, 30)}</span>
+                                <span>{item?.chats[0]?.question[0]?.toUpperCase()}{item?.chats[0]?.question?.substring(1, 25)}{item?.chats[0]?.question?.length > 25 && "..."}</span>
                             </div>
                         )
                     })
                 }
-
             </div>
         </div>
     )
