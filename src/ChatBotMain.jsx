@@ -369,12 +369,12 @@ const transcribeAudio = async (audioBlob) => {
                         }}
                         style={{ cursor: 'pointer' }}
                     />
-                    <img
+                    {/* <img
                         src={upload}
                         alt="Upload"
                         onClick={handleImageClick}
                         style={{ cursor: 'pointer' }}
-                    />
+                    /> */}
                     {/* <input
                         type="file"
                         accept="audio/*"
