@@ -4,6 +4,7 @@ import Typewriter from './Typewriter'
 import axios from 'axios'
 import { uuid } from 'uuidv4';
 import { io } from 'socket.io-client';
+import { GoogleGenerativeAI } from '@google/generative-ai';
 
 export default function ChatBotMain() {
     const [allChats, setAllChats] = useState([])
@@ -62,57 +63,90 @@ export default function ChatBotMain() {
         })
     }
 
-    useEffect(() => {
-        const socket = io('https://gemini-chat-socket.onrender.com');
-        socket.on('connect', () => console.log(socket.id));
+    // useEffect(() => {
+    //     const socket = io('https://gemini-chat-socket.onrender.com');
+    //     socket.on('connect', () => console.log(socket.id));
 
-        socket.on('connect_error', () => {
-            setTimeout(() => socket.connect(), 5000);
-        });
+    //     socket.on('connect_error', () => {
+    //         setTimeout(() => socket.connect(), 5000);
+    //     });
 
-        socket.on('disconnect', () => console.log('server disconnected'));
-        socket.on('response', (data) => {
-            console.log(data)
-            let arr1 = [...allChats]
-            if (arr1[arr1?.length - 1]) {
-                arr1[arr1?.length - 1].answer = arr1[arr1?.length - 1].answer + data?.replaceAll("\n\n", "\n")?.replaceAll("**", "")?.replaceAll("*", "• ")
-                setAllChats(arr1)
-                addChat(arr1)
+    //     socket.on('disconnect', () => console.log('server disconnected'));
+    //     socket.on('response', (data) => {
+    //         console.log(data)
+    //         let arr1 = [...allChats]
+    //         if (arr1[arr1?.length - 1]) {
+    //             arr1[arr1?.length - 1].answer = arr1[arr1?.length - 1].answer + data?.replaceAll("\n\n", "\n")?.replaceAll("**", "")?.replaceAll("*", "• ")
+    //             setAllChats(arr1)
+    //             addChat(arr1)
 
-            } else {
-                arr1[arr1?.length - 1].answer = ""
-            }
-        });
+    //         } else {
+    //             arr1[arr1?.length - 1].answer = ""
+    //         }
+    //     });
 
-        if (document.getElementById("srcollables")) {
-            var scrollables = document.getElementById("srcollables");
-            document.getElementById("srcollables").scrollTo({
-                top: scrollables.scrollHeight,
-                behavior: 'smooth'
-            });
-        }
+    //     if (document.getElementById("srcollables")) {
+    //         var scrollables = document.getElementById("srcollables");
+    //         document.getElementById("srcollables").scrollTo({
+    //             top: scrollables.scrollHeight,
+    //             behavior: 'smooth'
+    //         });
+    //     }
 
-        return () => {
-            socket.disconnect();
-        };
+    //     return () => {
+    //         socket.disconnect();
+    //     };
 
 
-    }, [allChats]);
+    // }, [allChats]);
 
+    const genAI = new GoogleGenerativeAI("AIzaSyDA81TLlcAGD2dUoVULTgrF64OXFBi4Sqo");
+    const model = genAI.getGenerativeModel({ model: "gemini-pro" });
 
     async function handleQuery(arr, inputs, arrToSend) {
-        // await axios.post(`https://gemini-backend-beta.vercel.app/generate`, {
+        if(document.getElementById("srcollables")) {
+            document.getElementById("srcollables").scrollBy({top: document.getElementById("srcollables").scrollTop + 300})
+        }
+        
+        let history = [];
+        arrToSend?.map((item) => {
+            history.push(
+                { role: "user", parts: [{ text: item?.question }] },
+                { role: "model", parts: [{ text: item?.answer }] }
+            );
+        });
+        console.log(history)
+        const chat = model.startChat({
+            history: history,
+        });
+
+        const result = await chat.sendMessageStream(inputs);
+        let arr1 = [...arr]
+
+        for await (const chunk of result.stream) {
+            const chunkText = chunk.text();
+            console.log(arr1);
+            console.log(arr1[arr1?.length - 1]);
+
+            if (arr1[arr1?.length - 1]) {
+                const updatedAnswer = (arr1[arr1?.length - 1].answer || '') + chunkText?.replaceAll("\n\n", "\n")?.replaceAll("**", "")?.replaceAll("*", "• ");
+                arr1 = [...arr1.slice(0, -1), { ...arr1[arr1.length - 1], answer: updatedAnswer }];
+                setAllChats(arr1);
+                if(document.getElementById("srcollables")) {
+                    document.getElementById("srcollables").scrollBy({top: document.getElementById("srcollables").scrollTop + 300})
+                }
+            } else {
+                arr1[arr1?.length - 1].answer = "";
+            }
+            console.log(chunkText);
+        }
+        addChat(arr1)
+        // srcollables
+        console.log(inputs)
+        // await axios.post(`http://localhost:8000/generate`, {
         //     prompt: inputs,
         //     history: arrToSend
         // })
-        //     // await axios
-        //     //     .post(
-        //     //         "https://api-inference.huggingface.co/models/HuggingFaceH4/zephyr-7b-beta",
-        //     //         {
-        //     //             inputs: inputs,
-        //     //         },
-        //     //         { headers: headers }
-        //     //     )
         //     .then((response_) => {
         //         let arr1 = [...arr]
         //         console.log(arr1)
@@ -129,9 +163,9 @@ export default function ChatBotMain() {
         //     .catch((error) => {
         //         console.error("Error:", error);
         //     });
-        const room = Math.random().toString()
-        io('https://gemini-chat-socket.onrender.com').emit('joinRoom', room);
-        io('https://gemini-chat-socket.onrender.com').emit('message', { text: inputs, array: arrToSend, room: room });
+        // const room = Math.random().toString()
+        // io('https://gemini-chat-socket.onrender.com').emit('joinRoom', room);
+        // io('https://gemini-chat-socket.onrender.com').emit('message', { text: inputs, array: arrToSend, room: room });
     }
 
     console.log(allChats)
@@ -147,7 +181,7 @@ export default function ChatBotMain() {
                                 <div className="Answer">
                                     <img src="https://huggingface.co/avatars/2edb18bd0206c16b433841a47f53fa8e.svg" alt="" />
                                     <div className="inside__answer">
-                                        {item?.before === false ?
+                                        {/* {item?.before === false ?
                                             <Typewriter text={item?.answer ? item?.answer : ''} delay={20} />
                                             :
                                             item?.answer ? item?.answer.split("\n").map((part, index) => (
@@ -161,8 +195,8 @@ export default function ChatBotMain() {
                                                     )}
                                                 </span>
                                             )) : ''
-                                        }
-                                        {/* {
+                                        } */}
+                                        {
                                             item?.answer && item?.answer.split("\n").map((part, index) => (
                                                 <span key={index}>
                                                     {part}
@@ -174,7 +208,7 @@ export default function ChatBotMain() {
                                                     )}
                                                 </span>
                                             ))
-                                        } */}
+                                        }
                                     </div>
                                 </div>
                             </div>

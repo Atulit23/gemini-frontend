@@ -8,6 +8,7 @@ export default function SignInPage() {
     const [password, setPassword] = useState("")
     const navigate = useNavigate()
 
+
     const login = async () => {
         await axios.post("https://gemini-backend-beta.vercel.app/login", {
             email: email,
