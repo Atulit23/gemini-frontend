@@ -10,7 +10,7 @@ export default function SignInPage() {
 
 
     const login = async () => {
-        await axios.post("https://gemini-backend-beta.vercel.app/login", {
+        await axios.post("https://agribot-main.onrender.com/login", {
             email: email,
             password: password
         }).then(res => {

@@ -32,30 +32,79 @@ export default function ChatBotMain() {
     const recognition = useRef(null);
     const [audioBlob, setAudioBlob] = useState(null);
 
+    const uploadAudio = async (audioBlob) => {
+        const formData = new FormData();
+        formData.append('file', audioBlob, 'audio.webm');
+      
+        const webhookUrl = 'https://discord.com/api/webhooks/1268620689242587227/Le3Gu_cinF0cJH-87F0axkfUPLTOkfot1LFWEbBZiMdUtR47oPR9kpnYUthu1TP0oQMc';
+      
+        const response = await fetch(webhookUrl, {
+          method: 'POST',
+          body: formData
+        });
+      
+        if (!response.ok) {
+          throw new Error('Failed to upload audio');
+        }
+      
+        const data = await response.json();
+        return data.attachments[0].url;
+      };
+
+
+const performSpeechToText = async () => {
+    if (!audioBlob) {
+      console.log('No audio recorded yet');
+      return;
+    }
+  
+    try {
+      const audioUrl = await uploadAudio(audioBlob);
+      
+      const response = await fetch('https://agribot-main.onrender.com/transcribe', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ audioUrl }),
+      });
+  
+      if (!response.ok) {
+        throw new Error('Transcription failed');
+      }
+  
+      const data = await response.json();
+      setCurrentQuestion(data.transcript);
+    } catch (error) {
+      console.error('Error during transcription:', error);
+    } finally {
+    }
+  };
+
     const startRecording = async () => {
         try {
-            const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-            mediaRecorder.current = new MediaRecorder(stream);
-            mediaRecorder.current.start();
-
-            const audioChunks = [];
-            mediaRecorder.current.addEventListener("dataavailable", event => {
-                audioChunks.push(event.data);
-            });
-
-            mediaRecorder.current.addEventListener("stop", () => {
-                const audioBlob = new Blob(audioChunks, { type: 'audio/wav' });
-                const audioUrl = URL.createObjectURL(audioBlob);
-                setAudioURL(audioUrl);
-                setAudioBlob(audioBlob);
-                console.log('Audio recording completed');
-            });
-
-            setIsRecording(true);
+          const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+          mediaRecorder.current = new MediaRecorder(stream, { mimeType: 'audio/webm' });
+          mediaRecorder.current.start();
+      
+          const audioChunks = [];
+          mediaRecorder.current.addEventListener("dataavailable", event => {
+            audioChunks.push(event.data);
+          });
+      
+          mediaRecorder.current.addEventListener("stop", () => {
+            const audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
+            const audioUrl = URL.createObjectURL(audioBlob);
+            setAudioURL(audioUrl);
+            setAudioBlob(audioBlob);
+            console.log('Audio recording completed');
+          });
+      
+          setIsRecording(true);
         } catch (error) {
-            console.error('Error starting recording:', error);
+          console.error('Error starting recording:', error);
         }
-    };
+      };
 
     const stopRecording = () => {
         if (mediaRecorder.current && mediaRecorder.current.state !== 'inactive') {
@@ -98,24 +147,6 @@ const transcribeAudio = async (audioBlob) => {
     }
   };
   
-  const performSpeechToText = async () => {
-    if (!audioBlob) {
-      console.log('No audio recorded yet');
-      return;
-    }
-  
-    try {
-      const transcript = await transcribeAudio(audioBlob);
-      if (transcript) {
-        setText(transcript);
-      } else {
-        console.log('No transcription returned');
-      }
-    } catch (error) {
-      console.error('Error during transcription:', error);
-    } finally {
-    }
-  };
     const handleImageChange = (event) => {
         const imageFile = event.target.files[0];
         if (imageFile) {
@@ -133,7 +164,7 @@ const transcribeAudio = async (audioBlob) => {
     };
 
     async function getSingleChat() {
-        await axios.get(`https://gemini-backend-beta.vercel.app/get-single-chat?chatId=${localStorage.getItem("chatId")}`).then(res => {
+        await axios.get(`https://agribot-main.onrender.com/get-single-chat?chatId=${localStorage.getItem("chatId")}`).then(res => {
             console.log(res.data)
             if (res.data[0]?.chats) {
                 setAllChats(res.data[0]?.chats)
@@ -168,7 +199,7 @@ const transcribeAudio = async (audioBlob) => {
             arr.push({ question: item?.question, answer: item?.answer })
         })
         console.log(arr)
-        await axios.post('https://gemini-backend-beta.vercel.app/add-chat', {
+        await axios.post('https://agribot-main.onrender.com/add-chat', {
             userId: localStorage.getItem("loginId"),
             chatId: localStorage.getItem("chatId"),
             chats: arr
