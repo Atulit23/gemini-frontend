@@ -13,7 +13,7 @@ export default function ChatBotMain() {
 
     const headers = {
         "Content-Type": "application/json",
-        Authorization: "Bearer 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",
+        Authorization: "Bearer APIKEY",
     };
 
     async function getSingleChat() {
