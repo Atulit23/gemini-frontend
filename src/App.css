@@ -143,3 +143,15 @@ form span {
   text-decoration: none;
   font-weight: 600;
 }
+
+.icons {
+  position: absolute;
+  margin-top: -2.5rem;
+  margin-left: 46rem;
+}
+
+.icons > img {
+  width: 1.6rem;
+  height: 1.6rem;
+  margin-right: 0.3rem;
+}

@@ -1,15 +1,131 @@
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useRef, useState } from 'react'
 import send from './send.svg'
 import Typewriter from './Typewriter'
 import axios from 'axios'
 import { uuid } from 'uuidv4';
 import { io } from 'socket.io-client';
 import { GoogleGenerativeAI } from '@google/generative-ai';
+import paper from '../src/assets/images/paper.png'
+import mic from '../src/assets/images/mic.png'
+import upload from '../src/assets/images/upload.png'
+import { createClient } from '@deepgram/sdk';
 
 export default function ChatBotMain() {
     const [allChats, setAllChats] = useState([])
     const [currentQuestion, setCurrentQuestion] = useState("")
     const chatId = Math.random().toString()
+    const audioInputRef = useRef(null);
+    const imageInputRef = useRef(null);
+
+    const [transcript, setTranscript] = useState('');
+    const [isRecording, setIsRecording] = useState(false);
+    const [jobId, setJobId] = useState('');
+    const [audioURL, setAudioURL] = useState('');
+
+    const handleImageClick = () => {
+        imageInputRef.current.click();
+    };
+
+    // Start speech recognition
+    const [text, setText] = useState('');
+    const mediaRecorder = useRef(null);
+    const recognition = useRef(null);
+    const [audioBlob, setAudioBlob] = useState(null);
+
+    const startRecording = async () => {
+        try {
+            const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+            mediaRecorder.current = new MediaRecorder(stream);
+            mediaRecorder.current.start();
+
+            const audioChunks = [];
+            mediaRecorder.current.addEventListener("dataavailable", event => {
+                audioChunks.push(event.data);
+            });
+
+            mediaRecorder.current.addEventListener("stop", () => {
+                const audioBlob = new Blob(audioChunks, { type: 'audio/wav' });
+                const audioUrl = URL.createObjectURL(audioBlob);
+                setAudioURL(audioUrl);
+                setAudioBlob(audioBlob);
+                console.log('Audio recording completed');
+            });
+
+            setIsRecording(true);
+        } catch (error) {
+            console.error('Error starting recording:', error);
+        }
+    };
+
+    const stopRecording = () => {
+        if (mediaRecorder.current && mediaRecorder.current.state !== 'inactive') {
+            mediaRecorder.current.stop();
+            console.log('Media recorder stopped');
+        }
+        setIsRecording(false);
+    };
+
+    
+const transcribeAudio = async (audioBlob) => {
+    const deepgramApiKey = 'de10d40c71916b9b72f24b8bcdf77be587f26eb4';
+    const deepgram = createClient(deepgramApiKey);
+  
+    // Convert the blob to an ArrayBuffer
+    const arrayBuffer = await audioBlob.arrayBuffer();
+  
+    try {
+      const { result, error } = await deepgram.listen.prerecorded.transcribeFile(
+        arrayBuffer,
+        {
+          mimetype: audioBlob.type, // This should be 'audio/wav' based on your previous code
+          model: 'nova-2',
+          language: 'en',
+          smart_format: true,
+        }
+      );
+  
+      if (error) {
+        console.error('Transcription error:', error);
+        return null;
+      } else {
+        console.dir(result, { depth: null });
+        // Assuming the transcript is in result.results.channels[0].alternatives[0].transcript
+        return result.results.channels[0].alternatives[0].transcript;
+      }
+    } catch (err) {
+      console.error('Error during transcription:', err);
+      return null;
+    }
+  };
+  
+  const performSpeechToText = async () => {
+    if (!audioBlob) {
+      console.log('No audio recorded yet');
+      return;
+    }
+  
+    try {
+      const transcript = await transcribeAudio(audioBlob);
+      if (transcript) {
+        setText(transcript);
+      } else {
+        console.log('No transcription returned');
+      }
+    } catch (error) {
+      console.error('Error during transcription:', error);
+    } finally {
+    }
+  };
+    const handleImageChange = (event) => {
+        const imageFile = event.target.files[0];
+        if (imageFile) {
+            console.log('Image file uploaded:', imageFile);
+        }
+    };
+    
+    useEffect(() => {
+        performSpeechToText()
+    }, [audioBlob, audioURL])
 
     const headers = {
         "Content-Type": "application/json",
@@ -104,10 +220,10 @@ export default function ChatBotMain() {
     const model = genAI.getGenerativeModel({ model: "gemini-pro" });
 
     async function handleQuery(arr, inputs, arrToSend) {
-        if(document.getElementById("srcollables")) {
-            document.getElementById("srcollables").scrollBy({top: document.getElementById("srcollables").scrollTop + 300})
+        if (document.getElementById("srcollables")) {
+            document.getElementById("srcollables").scrollBy({ top: document.getElementById("srcollables").scrollTop + 300 })
         }
-        
+
         let history = [];
         arrToSend?.map((item) => {
             history.push(
@@ -132,8 +248,8 @@ export default function ChatBotMain() {
                 const updatedAnswer = (arr1[arr1?.length - 1].answer || '') + chunkText?.replaceAll("\n\n", "\n")?.replaceAll("**", "")?.replaceAll("*", "• ");
                 arr1 = [...arr1.slice(0, -1), { ...arr1[arr1.length - 1], answer: updatedAnswer }];
                 setAllChats(arr1);
-                if(document.getElementById("srcollables")) {
-                    document.getElementById("srcollables").scrollBy({top: document.getElementById("srcollables").scrollTop + 300})
+                if (document.getElementById("srcollables")) {
+                    document.getElementById("srcollables").scrollBy({ top: document.getElementById("srcollables").scrollTop + 300 })
                 }
             } else {
                 arr1[arr1?.length - 1].answer = "";
@@ -230,7 +346,52 @@ export default function ChatBotMain() {
                         }
                     }
                 }} />
-                <img src={send} alt="" />
+                <div className="icons">
+                    <img src={paper} alt="" onClick={() => {
+                        if (currentQuestion !== "") {
+                            let arr = [...allChats]
+                            arr.push({ question: currentQuestion, answer: " ", before: false })
+                            setAllChats(arr)
+                            setCurrentQuestion("")
+                            handleQuery(arr, "" + currentQuestion, allChats)
+                        }
+                    }} />
+                    <img
+                        src={mic}
+                        alt="Mic"
+                        onClick={() => {
+                            setIsRecording(true)
+                            if (!isRecording) {
+                                startRecording()
+                            } else {
+                                stopRecording()
+                            }
+                        }}
+                        style={{ cursor: 'pointer' }}
+                    />
+                    <img
+                        src={upload}
+                        alt="Upload"
+                        onClick={handleImageClick}
+                        style={{ cursor: 'pointer' }}
+                    />
+                    {/* <input
+                        type="file"
+                        accept="audio/*"
+                        ref={audioInputRef}
+                        style={{ display: 'none' }}
+                        onChange={handleAudioChange}
+                    /> */}
+                    <input
+                        type="file"
+                        accept="image/*"
+                        ref={imageInputRef}
+                        style={{ display: 'none' }}
+                        onChange={handleImageChange}
+                    />
+                    {/* <audio src={audioURL} controls /> */}
+                </div>
+
             </div>
         </div>
     )
